@@ -4,6 +4,7 @@ Tek sayfalık, etkileşimli enerji eğitimi.
 
 ## İçerik
 
+- Fizik/felsefe: enerji nedir, “kaynak” ne demektir, neden korunur?
 - Enerjinin tanımı, birimleri ve enerji bilançosu
 - Zamana göre değişim: `P = dE/dt`
 - 1B / 2B / 3B enerji dağılımı ve enerji yoğunluğu
