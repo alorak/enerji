@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>Enerji — değişim, taşınım ve alanlar</title>
+  <style>
+    :root{
+      --bg:#07111f; --panel:#0d1b2c; --panel2:#11243a; --text:#eef6ff; --muted:#a9bed3;
+      --line:#27435e; --accent:#57c7ff; --accent2:#8be3a8; --warn:#ffd166; --danger:#ff7a90;
+      --shadow:0 18px 50px rgba(0,0,0,.24); --radius:18px;
+    }
+    @media (prefers-color-scheme: light){
+      :root{
+        --bg:#f4f8fc; --panel:#fff; --panel2:#edf5fb; --text:#102235; --muted:#5e7388;
+        --line:#d4e2ee; --accent:#006fa8; --accent2:#1b8d53; --warn:#a96500; --danger:#bd3150;
+        --shadow:0 16px 40px rgba(35,70,100,.10);
+      }
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:linear-gradient(180deg,var(--bg),color-mix(in srgb,var(--bg) 86%,#16446d 14%));
+      color:var(--text); line-height:1.6;
+    }
+    a{color:inherit}
+    .wrap{width:min(1180px,calc(100% - 32px));margin:auto}
+    header{
+      position:sticky;top:0;z-index:20;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent);
+      background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(16px)
+    }
+    nav{min-height:60px;display:flex;align-items:center;gap:18px;overflow:auto}
+    nav strong{margin-right:auto;white-space:nowrap;letter-spacing:.02em}
+    nav a{font-size:.9rem;color:var(--muted);text-decoration:none;white-space:nowrap}
+    nav a:hover{color:var(--text)}
+    .hero{padding:76px 0 36px}
+    .eyebrow{color:var(--accent);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:.78rem}
+    h1{font-size:clamp(2.5rem,7vw,6.3rem);line-height:.95;margin:.14em 0 .25em;letter-spacing:-.055em;max-width:950px}
+    h2{font-size:clamp(1.65rem,3vw,2.6rem);line-height:1.1;margin:0 0 14px;letter-spacing:-.03em}
+    h3{font-size:1.08rem;margin:0 0 8px}
+    .lead{font-size:clamp(1.04rem,2vw,1.28rem);max-width:850px;color:var(--muted)}
+    .hero-grid,.grid-2,.grid-3{display:grid;gap:16px}
+    .hero-grid{grid-template-columns:1.2fr .8fr;margin-top:34px}
+    .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .card{
+      background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 94%,white 6%),var(--panel));
+      border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)
+    }
+    .card.soft{box-shadow:none;background:var(--panel2)}
+    .formula{
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+      overflow:auto;white-space:nowrap
+    }
+    .big-formula{font-size:clamp(1.1rem,2.4vw,1.65rem);font-weight:700}
+    .muted{color:var(--muted)}
+    .accent{color:var(--accent)}
+    .ok{color:var(--accent2)}
+    .warn{color:var(--warn)}
+    .danger{color:var(--danger)}
+    section{padding:52px 0;scroll-margin-top:76px}
+    .section-head{max-width:860px;margin-bottom:22px}
+    .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .kpi{padding:16px;border-radius:14px;background:var(--panel2);border:1px solid var(--line)}
+    .kpi b{display:block;font-size:1.1rem}
+    .kpi span{font-size:.88rem;color:var(--muted)}
+    .mini-list{margin:8px 0 0;padding-left:18px;color:var(--muted)}
+    .mini-list li{margin:5px 0}
+    .sim{
+      border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);overflow:hidden
+    }
+    .sim-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;padding:18px 18px 0}
+    .sim-body{padding:18px}
+    .controls{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:12px;margin-bottom:14px}
+    label.control{font-size:.8rem;color:var(--muted);display:grid;gap:6px}
+    input[type="range"]{width:100%;accent-color:var(--accent)}
+    button{
+      border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;
+      padding:9px 12px;font:inherit;cursor:pointer
+    }
+    button:hover{border-color:var(--accent)}
+    canvas{width:100%;display:block;border:1px solid var(--line);border-radius:14px;background:#06101b}
+    .readouts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .pill{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:6px 10px;font-size:.85rem}
+    .callout{border-left:3px solid var(--accent);padding:12px 14px;background:var(--panel2);border-radius:0 12px 12px 0}
+    .flow{
+      display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:10px;align-items:center;text-align:center
+    }
+    .flow .node{padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel2)}
+    .flow .arrow{font-size:1.5rem;color:var(--accent)}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}
+    th{color:var(--muted);font-size:.82rem;text-transform:uppercase;letter-spacing:.06em}
+    footer{padding:34px 0 64px;color:var(--muted);font-size:.9rem}
+    .tiny{font-size:.82rem;color:var(--muted)}
+    .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin-top:8px}
+    .dot{display:inline-block;width:9px;height:9px;border-radius:999px;margin-right:5px;background:currentColor}
+    @media(max-width:850px){
+      .hero-grid,.grid-2,.grid-3{grid-template-columns:1fr}
+      .kpis{grid-template-columns:repeat(2,1fr)}
+      .controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .flow{grid-template-columns:1fr}.flow .arrow{transform:rotate(90deg)}
+      nav strong{margin-right:0}
+    }
+    @media(max-width:520px){
+      .wrap{width:min(100% - 20px,1180px)}
+      .kpis,.controls{grid-template-columns:1fr}
+      .hero{padding-top:48px}
+      .card,.sim-body{padding:14px}
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <nav aria-label="Bölümler">
+      <strong>ENERJİ</strong>
+      <a href="#tanim">Tanım</a>
+      <a href="#zaman">Zaman</a>
+      <a href="#uzay">Uzay</a>
+      <a href="#tasinim">Taşınım</a>
+      <a href="#mekanik">Mekanik</a>
+      <a href="#em">Elektromanyetik</a>
+      <a href="#neden">Ne değiştirir?</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Fiziksel bir “muhasebe” dili</div>
+      <h1>Enerji nasıl değişir, nerede bulunur ve nasıl taşınır?</h1>
+      <p class="lead">
+        Enerji skaler bir fiziksel büyüklüktür. Bir sistemin durumunu nicel olarak izlememizi sağlar;
+        farklı biçimler arasında dönüşebilir ve sistem sınırından taşınabilir. İzole bir sistemde toplam enerji korunur.
+      </p>
+      <div class="hero-grid">
+        <div class="card">
+          <div class="big-formula formula">ΔE<sub>sistem</sub> = E<sub>giren</sub> − E<sub>çıkan</sub></div>
+          <p class="muted">
+            Bu ifade bir “enerji bilançosudur”. Mekanik iş, ısı geçişi, elektromanyetik radyasyon ve madde akışı
+            enerji taşımanın farklı yollarıdır.
+          </p>
+          <div class="kpis">
+            <div class="kpi"><b>J</b><span>Enerji birimi: joule</span></div>
+            <div class="kpi"><b>W = J/s</b><span>Güç: enerji değişim hızı</span></div>
+            <div class="kpi"><b>J/m³</b><span>Enerji yoğunluğu</span></div>
+            <div class="kpi"><b>W/m²</b><span>Enerji akısı</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Üç farklı soru</h3>
+          <ul class="mini-list">
+            <li><b>Ne kadar?</b> Toplam enerji <i>E</i>.</li>
+            <li><b>Nerede?</b> Enerji yoğunluğu <i>u(r,t)</i>.</li>
+            <li><b>Hangi yönde/ne hızla?</b> Enerji akısı <i>J<sub>E</sub></i>.</li>
+          </ul>
+          <div class="callout" style="margin-top:14px">
+            Enerji bir vektör değildir. Yön taşıyan büyüklük enerji değil, <b>enerji akısıdır</b>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tanim">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">01 · Tanım</div>
+        <h2>“İş yapabilme yeteneği” yararlı ama eksik bir tanımdır</h2>
+        <p class="muted">
+          Giriş düzeyinde bu ifade sezgiseldir; daha genel bakışta enerji, fiziksel durumun skaler bir özelliğidir ve
+          zaman-öteleme simetrisiyle ilişkilidir. Enerjinin değeri seçilen sistem sınırına ve referans sıfırına bağlı olabilir;
+          ölçülebilir olan çoğu durumda enerji farkları ve enerji aktarımıdır.
+        </p>
+      </div>
+      <div class="grid-3">
+        <div class="card soft">
+          <h3>Kinetik</h3>
+          <div class="formula">K = ½mv²</div>
+          <p class="tiny">Newton mekaniğinde bir cismin hareketiyle ilişkili enerji.</p>
+        </div>
+        <div class="card soft">
+          <h3>Potansiyel</h3>
+          <div class="formula">F = −∇U</div>
+          <p class="tiny">Konservatif kuvvetlerde konfigürasyona bağlı enerji. Sıfır noktası keyfidir.</p>
+        </div>
+        <div class="card soft">
+          <h3>Alan enerjisi</h3>
+          <div class="formula">E = ∫<sub>V</sub> u(r,t) dV</div>
+          <p class="tiny">Enerji uzayda bir yoğunluk alanı olarak dağıtılabilir.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="zaman">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">02 · Zamana göre değişim</div>
+        <h2>Enerjinin zamana göre türevi güçtür</h2>
+        <p class="muted">
+          Bir sistemin enerjisi değişiyorsa net güç sıfır değildir. Enerji sabitken bile sistemin içindeki enerji biçimleri
+          birbirine dönüşebilir.
+        </p>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="formula big-formula">P<sub>net</sub> = dE/dt</div>
+          <p>
+            Pozitif net güç sisteme enerji kazandırır; negatif net güç sistemden enerji çıkarır.
+            Sabit güç için <span class="accent">E(t)=E₀+P<sub>net</sub>t</span>.
+          </p>
+          <div class="callout">
+            Bir büyüklüğün “zamana bağlı” olması iki farklı şey ifade edebilir:
+            sistemin durumu değişiyor olabilir veya enerji fonksiyonu açıkça zamana bağlı olabilir.
+          </div>
+        </div>
+        <div class="card">
+          <h3>Enerji hesabı simülasyonu</h3>
+          <div class="controls">
+            <label class="control">Giren güç <span id="pinOut">60 W</span>
+              <input id="pin" type="range" min="0" max="120" value="60" />
+            </label>
+            <label class="control">Çıkan güç <span id="poutOut">25 W</span>
+              <input id="pout" type="range" min="0" max="120" value="25" />
+            </label>
+            <label class="control">Başlangıç enerjisi <span id="e0Out">100 J</span>
+              <input id="e0" type="range" min="0" max="300" value="100" />
+            </label>
+            <label class="control">Zaman ölçeği
+              <button id="balanceReset">Sıfırla</button>
+            </label>
+          </div>
+          <canvas id="balanceCanvas" width="820" height="270" aria-label="Enerji zaman grafiği"></canvas>
+          <div class="readouts">
+            <span class="pill">P<sub>net</sub>: <b id="pnetRead">35 W</b></span>
+            <span class="pill">E: <b id="ebalRead">100 J</b></span>
+            <span class="pill">t: <b id="tbalRead">0.0 s</b></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="uzay">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">03 · 1B, 2B ve 3B</div>
+        <h2>Uzaydaki enerji dağılımı bir skaler alanla gösterilebilir</h2>
+        <p class="muted">
+          Üç boyutta enerji yoğunluğu <b>u(x,y,z,t)</b> birimi J/m³ olan skaler alandır.
+          İki boyutlu renk haritası çoğu zaman bu 3B alanın belirli bir <i>z</i> düzlemindeki kesitidir.
+          Gerçekten ince bir yüzey sisteminde ise yüzey enerji yoğunluğu J/m² olarak tanımlanabilir.
+        </p>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Boyuta göre okuma</h3>
+          <table>
+            <thead><tr><th>Gösterim</th><th>Örnek</th><th>Ne anlatır?</th></tr></thead>
+            <tbody>
+              <tr><td>1B</td><td>U(x)</td><td>Bir çizgi boyunca enerji manzarası.</td></tr>
+              <tr><td>2B</td><td>U(x,y)</td><td>Bir düzlemde eş-enerji bölgeleri ve gradyan.</td></tr>
+              <tr><td>3B</td><td>u(x,y,z)</td><td>Hacim içinde enerji yoğunluğu; toplam için hacim integrali gerekir.</td></tr>
+            </tbody>
+          </table>
+          <div class="formula" style="margin-top:12px">E<sub>V</sub>(t) = ∫<sub>V</sub> u(r,t) dV</div>
+          <p class="tiny">
+            Not: Enerji yoğunluğunun gradyanı tek başına genel bir “enerji kuvveti” değildir.
+            Örneğin ısı iletiminde akı çoğunlukla sıcaklık gradyanına bağlıdır: q = −k∇T.
+          </p>
+        </div>
+        <div class="card">
+          <h3>2B potansiyel enerji haritası</h3>
+          <p class="tiny">Haritaya tıklayarak parçacığı taşı. Ok, konservatif kuvveti gösterir: F = −∇U.</p>
+          <div class="controls">
+            <label class="control">Merkez sertliği <span id="landKOut">1.0</span>
+              <input id="landK" type="range" min="0.2" max="2.2" value="1" step="0.1" />
+            </label>
+            <label class="control">Dalgalılık <span id="landAOut">0.8</span>
+              <input id="landA" type="range" min="0" max="1.8" value="0.8" step="0.1" />
+            </label>
+            <label class="control">Başlangıç hızı <span id="landVOut">1.2</span>
+              <input id="landV" type="range" min="0" max="2.5" value="1.2" step="0.1" />
+            </label>
+            <label class="control">Durum
+              <button id="landPause">Duraklat</button>
+            </label>
+          </div>
+          <canvas id="landCanvas" width="620" height="420" aria-label="İki boyutlu potansiyel enerji haritası"></canvas>
+          <div class="readouts">
+            <span class="pill">U: <b id="uRead">0</b></span>
+            <span class="pill">K: <b id="kRead">0</b></span>
+            <span class="pill">E=K+U: <b id="etRead">0</b></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tasinim">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">04 · Yerel korunum ve taşınım</div>
+        <h2>Bir bölgede enerji değişiyorsa ya sınırdan akı vardır ya da yerel kaynak/alıcı vardır</h2>
+      </div>
+      <div class="card">
+        <div class="formula big-formula">∂u/∂t + ∇·J<sub>E</sub> = s</div>
+        <p class="muted">
+          Burada <b>u</b> enerji yoğunluğu, <b>J<sub>E</sub></b> enerji akı vektörü ve <b>s</b> yerel kaynak terimidir.
+          Bu denklem farklı fizik alanlarında farklı özel biçimler alır.
+        </p>
+        <div class="flow">
+          <div class="node"><b>Depolanan enerji</b><br><span class="tiny">u(r,t)</span></div>
+          <div class="arrow">↔</div>
+          <div class="node"><b>Sınırdan taşınım</b><br><span class="tiny">J<sub>E</sub> · n</span></div>
+          <div class="arrow">+</div>
+          <div class="node"><b>Yerel alışveriş</b><br><span class="tiny">kaynak / alıcı</span></div>
+        </div>
+      </div>
+      <div class="grid-3" style="margin-top:16px">
+        <div class="card soft"><h3>Mekanik</h3><p class="tiny">Kuvvetin yaptığı iş enerji aktarır; anlık aktarım hızı P=F·v.</p></div>
+        <div class="card soft"><h3>Isı iletimi</h3><p class="tiny">Isıl enerji mikroskobik etkileşimlerle taşınır; Fourier yasasında q=−k∇T.</p></div>
+        <div class="card soft"><h3>Elektromanyetik</h3><p class="tiny">Alan enerjisinin yönlü akısı Poynting vektörü S=(1/μ₀)E×B ile verilir.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="mekanik">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">05 · Klasik mekanik</div>
+        <h2>Konservatif kuvvetler enerjiyi K ↔ U arasında dönüştürür</h2>
+        <p class="muted">
+          Yalnızca zamandan bağımsız konservatif kuvvetler etkiliyorsa mekanik enerji K+U sabittir.
+          Sürtünme gibi süreçlerde mekanik enerji azalabilir; bu enerji yok olmaz, çoğunlukla iç enerjiye/ısıya dönüşür.
+        </p>
+      </div>
+      <div class="sim">
+        <div class="sim-head">
+          <div>
+            <h3>Yay–kütle–sönüm simülasyonu</h3>
+            <p class="tiny">m x″ = −kx − bv. Sönümün kaybettiği mekanik enerji, “ısıl” hesaba eklenir.</p>
+          </div>
+          <button id="oscPause">Duraklat</button>
+        </div>
+        <div class="sim-body">
+          <div class="controls">
+            <label class="control">Kütle m <span id="mOut">1.0 kg</span>
+              <input id="mass" type="range" min="0.4" max="3" value="1" step="0.1" />
+            </label>
+            <label class="control">Yay sabiti k <span id="springOut">8 N/m</span>
+              <input id="spring" type="range" min="2" max="20" value="8" step="1" />
+            </label>
+            <label class="control">Sönüm b <span id="dampOut">0.35 N·s/m</span>
+              <input id="damp" type="range" min="0" max="2" value="0.35" step="0.05" />
+            </label>
+            <label class="control">Başlangıç genliği <span id="ampOut">1.6 m</span>
+              <input id="amp" type="range" min="0.4" max="2.4" value="1.6" step="0.1" />
+            </label>
+          </div>
+          <div class="grid-2">
+            <canvas id="oscCanvas" width="720" height="300" aria-label="Yay kütle simülasyonu"></canvas>
+            <canvas id="energyCanvas" width="720" height="300" aria-label="Mekanik ve ısıl enerji grafiği"></canvas>
+          </div>
+          <div class="readouts">
+            <span class="pill">Kinetik: <b id="oscK">0 J</b></span>
+            <span class="pill">Potansiyel: <b id="oscU">0 J</b></span>
+            <span class="pill">Isıl: <b id="oscQ">0 J</b></span>
+            <span class="pill">Toplam: <b id="oscE">0 J</b></span>
+            <button id="oscReset">Yeniden başlat</button>
+          </div>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-top:16px">
+        <div class="card soft">
+          <h3>İş ve güç</h3>
+          <div class="formula">W = ∫ F · dr</div>
+          <div class="formula" style="margin-top:8px">P = dW/dt = F · v</div>
+        </div>
+        <div class="card soft">
+          <h3>Zamana bağlı potansiyel</h3>
+          <div class="formula">dE/dt = P<sub>nc</sub> + ∂U/∂t</div>
+          <p class="tiny">Dışarıdan değiştirilen bir parametre (ör. hareket ettirilen tuzak) sisteme enerji verebilir veya sistemden enerji çekebilir.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="em">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">06 · Elektromanyetik alan</div>
+        <h2>Alanlar enerji depolar; Poynting vektörü bu enerjinin akışını gösterir</h2>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Alan enerji yoğunluğu</h3>
+          <div class="formula">u<sub>EM</sub> = ½ε₀E² + B²/(2μ₀)</div>
+          <h3 style="margin-top:16px">Enerji akısı</h3>
+          <div class="formula">S = (1/μ₀) E × B</div>
+          <h3 style="margin-top:16px">Poynting teoremi</h3>
+          <div class="formula">∂u<sub>EM</sub>/∂t + ∇·S = −J·E</div>
+          <p class="tiny">
+            J·E &gt; 0 olduğunda alan yüklü maddeye enerji aktarır. Vakumda J=0 ise alan enerjisindeki yerel değişim,
+            Poynting akısının yakınsaması/ıraksamasıyla dengelenir.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Vakumda düzlem EM dalga</h3>
+          <div class="controls">
+            <label class="control">E₀ <span id="eAmpOut">10 V/m</span>
+              <input id="eAmp" type="range" min="1" max="50" value="10" step="1" />
+            </label>
+            <label class="control">Gösterim frekansı <span id="freqOut">1.0×</span>
+              <input id="freq" type="range" min="0.4" max="2.5" value="1" step="0.1" />
+            </label>
+          </div>
+          <canvas id="emCanvas" width="720" height="350" aria-label="Elektromanyetik dalga ve enerji akısı"></canvas>
+          <div class="readouts">
+            <span class="pill">B₀: <b id="bAmpRead"></b></span>
+            <span class="pill">⟨u⟩: <b id="uAvgRead"></b></span>
+            <span class="pill">⟨S⟩: <b id="sAvgRead"></b></span>
+          </div>
+          <p class="tiny">
+            Grafik fazı eğitim amacıyla yavaşlatılmıştır; sayısal B₀, ortalama enerji yoğunluğu ve ortalama şiddet
+            vakumdaki fiziksel bağıntılardan hesaplanır.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="neden">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">07 · Enerjiyi ne değiştirir?</div>
+        <h2>Sistem sınırını çiz; sonra enerji giriş-çıkış yollarını say</h2>
+      </div>
+      <div class="grid-3">
+        <div class="card soft"><h3>1. Dış kuvvetin yaptığı iş</h3><p class="tiny">F·v pozitifse sisteme mekanik güç girer; negatifse sistem enerji verir.</p></div>
+        <div class="card soft"><h3>2. Isı geçişi</h3><p class="tiny">Sıcaklık farkı nedeniyle iletim, taşınım veya radyasyonla enerji aktarılabilir.</p></div>
+        <div class="card soft"><h3>3. Elektromanyetik akı</h3><p class="tiny">Poynting akısı bir sınırdan geçerek alan enerjisini taşıyabilir.</p></div>
+        <div class="card soft"><h3>4. Madde akışı</h3><p class="tiny">Açık sistemlerde içeri giren/çıkan madde kendi enerjisini de taşır.</p></div>
+        <div class="card soft"><h3>5. Zamana bağlı parametreler</h3><p class="tiny">Yay sabitini, alanı, potansiyeli veya sınırı dışarıdan değiştirmek enerji alışverişidir.</p></div>
+        <div class="card soft"><h3>6. İç dönüşümler</h3><p class="tiny">Kimyasal → ısıl, potansiyel → kinetik gibi dönüşümler toplamı değiştirmeden dağılımı değiştirebilir.</p></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h3>Kontrol sorusu</h3>
+        <p>
+          “Enerji azaldı” dediğinde önce hangi enerjiyi kastettiğini sor:
+          <b>mekanik enerji mi, alan enerjisi mi, sistemin toplam enerjisi mi?</b>
+          Sürtünmeli bir düzende mekanik enerji azalırken sistem+çevre toplam enerjisi yine korunabilir.
+        </p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    Bu sayfa Newton mekaniği, klasik elektromanyetizma ve yerel enerji korunumu çerçevesinde hazırlanmıştır.
+    Simülasyonlar kavramsal eğitim amaçlıdır; sayısal integrasyon nedeniyle çok küçük hesap hataları oluşabilir.
+  </div>
+</footer>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+
+  function prep(canvas){
+    const rect = canvas.getBoundingClientRect();
+    const w = Math.max(300, Math.round(rect.width * DPR));
+    const h = Math.max(180, Math.round((canvas.height / canvas.width) * rect.width * DPR));
+    if(canvas.width !== w || canvas.height !== h){ canvas.width=w; canvas.height=h; }
+    const c = canvas.getContext('2d');
+    c.setTransform(DPR,0,0,DPR,0,0);
+    return {c,w:w/DPR,h:h/DPR};
+  }
+  function grid(c,w,h,step=50){
+    c.strokeStyle='rgba(120,160,190,.12)'; c.lineWidth=1;
+    for(let x=0;x<w;x+=step){c.beginPath();c.moveTo(x,0);c.lineTo(x,h);c.stroke()}
+    for(let y=0;y<h;y+=step){c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke()}
+  }
+  function line(c,pts,color,width=2){
+    if(!pts.length) return;
+    c.strokeStyle=color;c.lineWidth=width;c.beginPath();c.moveTo(pts[0][0],pts[0][1]);
+    for(let i=1;i<pts.length;i++) c.lineTo(pts[i][0],pts[i][1]);
+    c.stroke();
+  }
+  function text(c,s,x,y,color,size=12,align='left'){
+    c.fillStyle=color;c.font=size+'px system-ui';c.textAlign=align;c.fillText(s,x,y);
+  }
+
+  // 1) ENERGY BALANCE
+  const bal = {t:0,E:100,last:performance.now(),hist:[]};
+  function resetBal(){ bal.t=0;bal.E=+$('e0').value;bal.hist=[];bal.last=performance.now(); }
+  ['pin','pout','e0'].forEach(id => $(id).addEventListener('input', () => {
+    $('pinOut').textContent=$('pin').value+' W';
+    $('poutOut').textContent=$('pout').value+' W';
+    $('e0Out').textContent=$('e0').value+' J';
+    if(id==='e0') resetBal();
+  }));
+  $('balanceReset').onclick=resetBal;
+  resetBal();
+
+  function drawBalance(now){
+    const dt=Math.min(.04,(now-bal.last)/1000);bal.last=now;
+    const pn=+$('pin').value-(+$('pout').value);
+    bal.E=Math.max(0,bal.E+pn*dt);bal.t+=dt;
+    if(!bal.hist.length || bal.t-bal.hist[bal.hist.length-1][0]>.08) bal.hist.push([bal.t,bal.E]);
+    if(bal.hist.length>220) bal.hist.shift();
+
+    const {c,w,h}=prep($('balanceCanvas'));c.clearRect(0,0,w,h);grid(c,w,h,50);
+    const maxE=Math.max(100,...bal.hist.map(p=>p[1]))*1.12;
+    const t0=bal.hist.length?bal.hist[0][0]:0, span=Math.max(8,bal.t-t0);
+    const pts=bal.hist.map(p=>[(p[0]-t0)/span*(w-50)+35,h-28-p[1]/maxE*(h-45)]);
+    line(c,pts,'#57c7ff',3);
+    text(c,'Enerji E(t)',12,18,'#b9cce0',12);
+    text(c,maxE.toFixed(0)+' J',w-8,18,'#b9cce0',11,'right');
+    $('pnetRead').textContent=pn.toFixed(0)+' W';
+    $('ebalRead').textContent=bal.E.toFixed(1)+' J';
+    $('tbalRead').textContent=bal.t.toFixed(1)+' s';
+  }
+
+  // 2) 2D ENERGY LANDSCAPE
+  const land={x:2.1,y:.8,vx:0,vy:1.2,paused:false,last:performance.now(),E0:0};
+  function pot(x,y){
+    const k=+$('landK').value,A=+$('landA').value;
+    return .5*k*(x*x+y*y)+A*(Math.sin(1.35*x)*Math.cos(1.15*y)+1);
+  }
+  function grad(x,y){
+    const k=+$('landK').value,A=+$('landA').value;
+    return [
+      k*x+A*1.35*Math.cos(1.35*x)*Math.cos(1.15*y),
+      k*y-A*1.15*Math.sin(1.35*x)*Math.sin(1.15*y)
+    ];
+  }
+  function resetLandVelocity(){
+    const v=+$('landV').value; land.vx=0;land.vy=v;land.E0=.5*v*v+pot(land.x,land.y);
+  }
+  resetLandVelocity();
+  ['landK','landA','landV'].forEach(id => $(id).addEventListener('input',()=>{
+    $('landKOut').textContent=(+$('landK').value).toFixed(1);
+    $('landAOut').textContent=(+$('landA').value).toFixed(1);
+    $('landVOut').textContent=(+$('landV').value).toFixed(1);
+    resetLandVelocity();
+  }));
+  $('landPause').onclick=()=>{land.paused=!land.paused;$('landPause').textContent=land.paused?'Sürdür':'Duraklat'};
+
+  $('landCanvas').addEventListener('pointerdown',(ev)=>{
+    const r=$('landCanvas').getBoundingClientRect();
+    land.x=((ev.clientX-r.left)/r.width)*8-4;
+    land.y=4-((ev.clientY-r.top)/r.height)*8;
+    resetLandVelocity();
+  });
+
+  function drawLand(now){
+    const canvas=$('landCanvas'); const {c,w,h}=prep(canvas);
+    const dt=Math.min(.02,(now-land.last)/1000);land.last=now;
+    if(!land.paused){
+      // velocity-Verlet, unit mass
+      let g=grad(land.x,land.y), ax=-g[0], ay=-g[1];
+      land.x += land.vx*dt + .5*ax*dt*dt; land.y += land.vy*dt + .5*ay*dt*dt;
+      const g2=grad(land.x,land.y), ax2=-g2[0], ay2=-g2[1];
+      land.vx += .5*(ax+ax2)*dt; land.vy += .5*(ay+ay2)*dt;
+      if(Math.abs(land.x)>4.2 || Math.abs(land.y)>4.2){land.x=2.1;land.y=.8;resetLandVelocity()}
+    }
+    const img=c.createImageData(Math.floor(w),Math.floor(h));
+    let p=0;
+    for(let py=0;py<Math.floor(h);py++){
+      const y=4-py/h*8;
+      for(let px=0;px<Math.floor(w);px++){
+        const x=px/w*8-4, v=pot(x,y), q=Math.max(0,Math.min(1,v/24));
+        const r=20+Math.floor(160*q), g=40+Math.floor(120*(1-q)), b=90+Math.floor(130*(1-q));
+        img.data[p++]=r;img.data[p++]=g;img.data[p++]=b;img.data[p++]=255;
+      }
+    }
+    c.putImageData(img,0,0);
+    c.strokeStyle='rgba(255,255,255,.12)';
+    for(let i=1;i<8;i++){const x=i*w/8;c.beginPath();c.moveTo(x,0);c.lineTo(x,h);c.stroke()}
+    for(let i=1;i<8;i++){const y=i*h/8;c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke()}
+    const sx=(land.x+4)/8*w, sy=(4-land.y)/8*h;
+    const g=grad(land.x,land.y), fx=-g[0],fy=-g[1], scale=18;
+    c.strokeStyle='#ffffff';c.fillStyle='#ffffff';c.lineWidth=2;
+    c.beginPath();c.moveTo(sx,sy);c.lineTo(sx+fx*scale,sy-fy*scale);c.stroke();
+    const ang=Math.atan2(-fy*scale,fx*scale), ex=sx+fx*scale,ey=sy-fy*scale;
+    c.beginPath();c.moveTo(ex,ey);c.lineTo(ex-8*Math.cos(ang-.5),ey-8*Math.sin(ang-.5));c.lineTo(ex-8*Math.cos(ang+.5),ey-8*Math.sin(ang+.5));c.fill();
+    c.fillStyle='#ffd166';c.beginPath();c.arc(sx,sy,8,0,Math.PI*2);c.fill();
+    const U=pot(land.x,land.y),K=.5*(land.vx*land.vx+land.vy*land.vy);
+    $('uRead').textContent=U.toFixed(2);
+    $('kRead').textContent=K.toFixed(2);
+    $('etRead').textContent=(U+K).toFixed(2);
+  }
+
+  // 3) OSCILLATOR
+  const osc={x:1.6,v:0,q:0,last:performance.now(),hist:[],paused:false};
+  function resetOsc(){
+    osc.x=+$('amp').value;osc.v=0;osc.q=0;osc.hist=[];osc.last=performance.now();
+  }
+  ['mass','spring','damp','amp'].forEach(id => $(id).addEventListener('input',()=>{
+    $('mOut').textContent=(+$('mass').value).toFixed(1)+' kg';
+    $('springOut').textContent=$('spring').value+' N/m';
+    $('dampOut').textContent=(+$('damp').value).toFixed(2)+' N·s/m';
+    $('ampOut').textContent=(+$('amp').value).toFixed(1)+' m';
+    resetOsc();
+  }));
+  $('oscReset').onclick=resetOsc;
+  $('oscPause').onclick=()=>{osc.paused=!osc.paused;$('oscPause').textContent=osc.paused?'Sürdür':'Duraklat'};
+  resetOsc();
+
+  function drawOsc(now){
+    const dtAll=Math.min(.03,(now-osc.last)/1000);osc.last=now;
+    const m=+$('mass').value,k=+$('spring').value,b=+$('damp').value;
+    if(!osc.paused){
+      const steps=4,dt=dtAll/steps;
+      for(let i=0;i<steps;i++){
+        // semi-implicit Euler: robust enough for educational animation
+        const a=(-k*osc.x-b*osc.v)/m;
+        osc.v+=a*dt;osc.x+=osc.v*dt;
+        osc.q+=b*osc.v*osc.v*dt;
+      }
+    }
+    const K=.5*m*osc.v*osc.v,U=.5*k*osc.x*osc.x,E=K+U+osc.q;
+    osc.hist.push([K,U,osc.q,E]);if(osc.hist.length>240)osc.hist.shift();
+    $('oscK').textContent=K.toFixed(2)+' J';$('oscU').textContent=U.toFixed(2)+' J';
+    $('oscQ').textContent=osc.q.toFixed(2)+' J';$('oscE').textContent=E.toFixed(2)+' J';
+
+    let a=prep($('oscCanvas')),c=a.c,w=a.w,h=a.h;c.clearRect(0,0,w,h);grid(c,w,h,50);
+    const wall=70, y=h/2;
+    c.fillStyle='#49657c';c.fillRect(30,45,14,h-90);
+    const px=Math.max(wall+20,Math.min(w-70,w/2+osc.x*(w/7)));
+    c.strokeStyle='#8be3a8';c.lineWidth=3;c.beginPath();c.moveTo(44,y);
+    const coils=18;for(let i=1;i<=coils;i++){const xx=44+(px-44)*i/coils,yy=y+(i===coils?0:(i%2?16:-16));c.lineTo(xx,yy)}c.stroke();
+    c.fillStyle='#57c7ff';c.fillRect(px-28,y-28,56,56);
+    text(c,'x = '+osc.x.toFixed(2)+' m',w-14,24,'#d9e9f8',12,'right');
+    text(c,'v = '+osc.v.toFixed(2)+' m/s',w-14,42,'#d9e9f8',12,'right');
+
+    a=prep($('energyCanvas'));c=a.c;w=a.w;h=a.h;c.clearRect(0,0,w,h);grid(c,w,h,50);
+    const max=Math.max(1,...osc.hist.map(v=>v[3]))*1.1;
+    const colors=['#57c7ff','#ffd166','#ff7a90','#8be3a8'];
+    for(let s=0;s<4;s++){
+      const pts=osc.hist.map((v,i)=>[i/Math.max(1,osc.hist.length-1)*(w-35)+25,h-20-v[s]/max*(h-38)]);
+      line(c,pts,colors[s],s===3?3:2);
+    }
+    text(c,'K',14,18,colors[0]);text(c,'U',38,18,colors[1]);text(c,'ısıl',62,18,colors[2]);text(c,'toplam',108,18,colors[3]);
+  }
+
+  // 4) EM WAVE
+  const eps0=8.8541878128e-12, mu0=1.25663706212e-6, c0=299792458;
+  let emPhase=0,emLast=performance.now();
+  ['eAmp','freq'].forEach(id=>$(id).addEventListener('input',()=>{
+    $('eAmpOut').textContent=$('eAmp').value+' V/m';
+    $('freqOut').textContent=(+$('freq').value).toFixed(1)+'×';
+  }));
+  function drawEM(now){
+    const dt=Math.min(.04,(now-emLast)/1000);emLast=now;emPhase+=dt*(+$('freq').value)*2.2;
+    const E0=+$('eAmp').value,B0=E0/c0,uAvg=.5*eps0*E0*E0,sAvg=.5*eps0*c0*E0*E0;
+    $('bAmpRead').textContent=(B0*1e9).toFixed(2)+' nT';
+    $('uAvgRead').textContent=uAvg.toExponential(2)+' J/m³';
+    $('sAvgRead').textContent=sAvg.toFixed(3)+' W/m²';
+    const {c,w,h}=prep($('emCanvas'));c.clearRect(0,0,w,h);grid(c,w,h,50);
+    const mid=h*.44,amp=h*.22;
+    const ePts=[],bPts=[],uPts=[];
+    for(let x=0;x<w;x+=2){
+      const ph=x/w*Math.PI*5-emPhase,cs=Math.cos(ph);
+      ePts.push([x,mid-cs*amp]);
+      bPts.push([x,mid+cs*amp*.55]);
+      uPts.push([x,h-25-cs*cs*(h*.20)]);
+    }
+    line(c,ePts,'#57c7ff',2.4);line(c,bPts,'#ff7a90',2.2);line(c,uPts,'#ffd166',2.2);
+    c.strokeStyle='rgba(255,255,255,.4)';c.beginPath();c.moveTo(0,mid);c.lineTo(w,mid);c.stroke();
+    text(c,'E alanı',12,20,'#57c7ff');text(c,'B alanı (ölçeklenmiş)',82,20,'#ff7a90');text(c,'u(x,t)',225,20,'#ffd166');
+    const ay=h-54; c.strokeStyle='#8be3a8';c.fillStyle='#8be3a8';c.lineWidth=4;c.beginPath();c.moveTo(w*.62,ay);c.lineTo(w*.86,ay);c.stroke();
+    c.beginPath();c.moveTo(w*.86,ay);c.lineTo(w*.86-12,ay-7);c.lineTo(w*.86-12,ay+7);c.fill();
+    text(c,'Poynting akısı S →',w*.62,ay-12,'#8be3a8');
+  }
+
+  function tick(now){
+    drawBalance(now);drawLand(now);drawOsc(now);drawEM(now);
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
