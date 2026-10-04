@@ -11,12 +11,14 @@ Tek sayfalık, etkileşimli enerji eğitimi.
 - Yerel enerji korunumu ve enerji akısı
 - Klasik mekanik: iş, güç, kinetik/potansiyel enerji, sürtünme
 - Elektromanyetik enerji yoğunluğu, Poynting vektörü ve Poynting teoremi
+- Foton–madde etkileşimleri: fotoelektrik olay, Compton saçılması, çift oluşumu ve enerji eşikleri
 - “Enerjiyi ne değiştirir?” özeti
 - Dört etkileşimli simülasyon:
   - enerji bilançosu
   - 2B potansiyel enerji manzarası
   - yay–kütle–sönüm sistemi
   - vakumda düzlem elektromanyetik dalga
+  - foton enerji tarayıcısı: fotoelektrik, Compton ve çift oluşumu kinematiği
 
 ## Çalıştırma
 
