@@ -513,7 +513,8 @@
 
   function drawBalance(now){
     const dt=Math.min(.04,(now-bal.last)/1000);bal.last=now;
-    const pn=+$('pin').value-(+$('pout').value);
+    const requestedPn=+$('pin').value-(+$('pout').value);
+    const pn=(bal.E<=0 && requestedPn<0) ? 0 : requestedPn;
     bal.E=Math.max(0,bal.E+pn*dt);bal.t+=dt;
     if(!bal.hist.length || bal.t-bal.hist[bal.hist.length-1][0]>.08) bal.hist.push([bal.t,bal.E]);
     if(bal.hist.length>220) bal.hist.shift();
@@ -532,6 +533,10 @@
 
   // 2) 2D ENERGY LANDSCAPE
   const land={x:2.1,y:.8,vx:0,vy:1.2,paused:false,last:performance.now(),E0:0};
+  const landBg=document.createElement('canvas');
+  landBg.width=220; landBg.height=150;
+  const landBgCtx=landBg.getContext('2d');
+  let landBgKey='';
   function pot(x,y){
     const k=+$('landK').value,A=+$('landA').value;
     return .5*k*(x*x+y*y)+A*(Math.sin(1.35*x)*Math.cos(1.15*y)+1);
@@ -573,17 +578,23 @@
       land.vx += .5*(ax+ax2)*dt; land.vy += .5*(ay+ay2)*dt;
       if(Math.abs(land.x)>4.2 || Math.abs(land.y)>4.2){land.x=2.1;land.y=.8;resetLandVelocity()}
     }
-    const img=c.createImageData(Math.floor(w),Math.floor(h));
-    let p=0;
-    for(let py=0;py<Math.floor(h);py++){
-      const y=4-py/h*8;
-      for(let px=0;px<Math.floor(w);px++){
-        const x=px/w*8-4, v=pot(x,y), q=Math.max(0,Math.min(1,v/24));
-        const r=20+Math.floor(160*q), g=40+Math.floor(120*(1-q)), b=90+Math.floor(130*(1-q));
-        img.data[p++]=r;img.data[p++]=g;img.data[p++]=b;img.data[p++]=255;
+    const bgKey=$('landK').value+'|'+$('landA').value;
+    if(bgKey!==landBgKey){
+      landBgKey=bgKey;
+      const img=landBgCtx.createImageData(landBg.width,landBg.height);
+      let p=0;
+      for(let py=0;py<landBg.height;py++){
+        const y=4-py/landBg.height*8;
+        for(let px=0;px<landBg.width;px++){
+          const x=px/landBg.width*8-4, v=pot(x,y), q=Math.max(0,Math.min(1,v/24));
+          const r=20+Math.floor(160*q), g=40+Math.floor(120*(1-q)), b=90+Math.floor(130*(1-q));
+          img.data[p++]=r;img.data[p++]=g;img.data[p++]=b;img.data[p++]=255;
+        }
       }
+      landBgCtx.putImageData(img,0,0);
     }
-    c.putImageData(img,0,0);
+    c.imageSmoothingEnabled=true;
+    c.drawImage(landBg,0,0,w,h);
     c.strokeStyle='rgba(255,255,255,.12)';
     for(let i=1;i<8;i++){const x=i*w/8;c.beginPath();c.moveTo(x,0);c.lineTo(x,h);c.stroke()}
     for(let i=1;i<8;i++){const y=i*h/8;c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke()}
@@ -667,20 +678,24 @@
     $('uAvgRead').textContent=uAvg.toExponential(2)+' J/m³';
     $('sAvgRead').textContent=sAvg.toFixed(3)+' W/m²';
     const {c,w,h}=prep($('emCanvas'));c.clearRect(0,0,w,h);grid(c,w,h,50);
-    const mid=h*.44,amp=h*.22;
+    const eBase=h*.27,bBase=h*.55,uBase=h*.92,ampE=h*.15,ampB=h*.095;
     const ePts=[],bPts=[],uPts=[];
     for(let x=0;x<w;x+=2){
       const ph=x/w*Math.PI*5-emPhase,cs=Math.cos(ph);
-      ePts.push([x,mid-cs*amp]);
-      bPts.push([x,mid+cs*amp*.55]);
-      uPts.push([x,h-25-cs*cs*(h*.20)]);
+      // Düzlem vakum dalgasında E ve B aynı fazdadır; burada ayrı düşey eksenlerde çiziliyor.
+      ePts.push([x,eBase-cs*ampE]);
+      bPts.push([x,bBase-cs*ampB]);
+      uPts.push([x,uBase-cs*cs*(h*.14)]);
     }
+    c.strokeStyle='rgba(255,255,255,.28)';c.lineWidth=1;
+    [eBase,bBase,uBase].forEach(y=>{c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke()});
     line(c,ePts,'#57c7ff',2.4);line(c,bPts,'#ff7a90',2.2);line(c,uPts,'#ffd166',2.2);
-    c.strokeStyle='rgba(255,255,255,.4)';c.beginPath();c.moveTo(0,mid);c.lineTo(w,mid);c.stroke();
-    text(c,'E alanı',12,20,'#57c7ff');text(c,'B alanı (ölçeklenmiş)',82,20,'#ff7a90');text(c,'u(x,t)',225,20,'#ffd166');
-    const ay=h-54; c.strokeStyle='#8be3a8';c.fillStyle='#8be3a8';c.lineWidth=4;c.beginPath();c.moveTo(w*.62,ay);c.lineTo(w*.86,ay);c.stroke();
+    text(c,'E(x,t)',12,eBase-ampE-8,'#57c7ff');
+    text(c,'B(x,t) — ölçeklenmiş, E ile aynı faz',12,bBase-ampB-8,'#ff7a90');
+    text(c,'u_EM(x,t) ∝ cos²',12,uBase-h*.14-8,'#ffd166');
+    const ay=h*.73; c.strokeStyle='#8be3a8';c.fillStyle='#8be3a8';c.lineWidth=4;c.beginPath();c.moveTo(w*.61,ay);c.lineTo(w*.86,ay);c.stroke();
     c.beginPath();c.moveTo(w*.86,ay);c.lineTo(w*.86-12,ay-7);c.lineTo(w*.86-12,ay+7);c.fill();
-    text(c,'Poynting akısı S →',w*.62,ay-12,'#8be3a8');
+    text(c,'enerji akısı S',w*.61,ay-10,'#8be3a8');
   }
 
   function tick(now){
