@@ -578,8 +578,9 @@
               <tr><td>meV–0.1 eV</td><td>Dönme, titreşim ve katılarda fonon uyarımları.</td></tr>
               <tr><td>~0.1–10 eV</td><td>Moleküler titreşimler ve elektronik uyarılmalar; görünür ışık çoğu maddede iyonlaştırıcı değildir.</td></tr>
               <tr><td>birkaç–onlarca eV ve üzeri</td><td>Bağlanma enerjisi aşılırsa fotoiyonizasyon başlayabilir.</td></tr>
-              <tr><td>keV–yüzlerce keV</td><td>Fotoelektrik soğurma, elastik saçılma ve Compton birlikte bulunabilir.</td></tr>
+              <tr><td>keV–yüzlerce keV</td><td>Fotoelektrik soğurma, Rayleigh (koherent) saçılması ve Compton birlikte bulunabilir.</td></tr>
               <tr><td>~0.1–birkaç MeV</td><td>Compton çoğu düşük/orta Z ortamda önemli; 1.022 MeV'den sonra çift oluşumu mümkün.</td></tr>
+              <tr><td>2.044 MeV ve üzeri</td><td>Bir elektronun alanında “triplet” çift üretimi de kinematik olarak mümkün olur.</td></tr>
               <tr><td>birkaç MeV ve üzeri</td><td>Çift oluşumunun önemi artar; bazı çekirdeklerde fotonükleer etkileşimler de açılabilir.</td></tr>
               <tr><td>~10–30 MeV</td><td>Birçok çekirdekte güçlü fotonükleer soğurma bölgeleri görülebilir.</td></tr>
             </tbody>
@@ -600,6 +601,40 @@
             Bu nedenle gerçek bir malzeme için etkileşim olasılıkları değerlendirilirken enerjiye bağlı tesir kesitleri
             veya kütlesel zayıflatma katsayıları kullanılmalıdır.
           </p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h3>Etkileşimli foton enerji tarayıcısı</h3>
+        <p class="tiny">
+          Enerjiyi logaritmik olarak değiştir. Hesaplar kinematik olarak hangi süreçlerin mümkün olduğunu gösterir;
+          gerçek etkileşim olasılığı veya baskınlık hesabı değildir.
+        </p>
+        <div class="controls">
+          <label class="control">Foton enerjisi <span id="photonEnergyOut">100 keV</span>
+            <input id="photonEnergy" type="range" min="0" max="8" value="5" step="0.01" />
+          </label>
+          <label class="control">Bağlanma enerjisi E<sub>b</sub> <span id="bindingOut">1.00 keV</span>
+            <input id="bindingEnergy" type="range" min="0" max="5" value="3" step="0.01" />
+          </label>
+          <label class="control">Compton açısı θ <span id="comptonAngleOut">90°</span>
+            <input id="comptonAngle" type="range" min="0" max="180" value="90" step="1" />
+          </label>
+          <label class="control">Dalga boyu
+            <span id="wavelengthOut">—</span>
+          </label>
+        </div>
+        <div class="readouts">
+          <span class="pill">Fotoelektrik: <b id="photoStatus">—</b></span>
+          <span class="pill">Fotoelektron K: <b id="photoKRead">—</b></span>
+          <span class="pill">Compton E′: <b id="comptonERead">—</b></span>
+          <span class="pill">Elektrona aktarılan: <b id="comptonTransferRead">—</b></span>
+          <span class="pill">Çift oluşumu: <b id="pairStatus">—</b></span>
+          <span class="pill">1.022 MeV üstü enerji: <b id="pairExcessRead">—</b></span>
+        </div>
+        <div class="callout" style="margin-top:12px">
+          Compton saçılmasında 0° için foton hemen hemen enerji kaybetmeden devam eder; 180° geri saçılmada enerji aktarımı en büyüktür.
+          Çift oluşumunda ise 1.022 MeV'nin üzerindeki enerji, geri tepme dahil olmak üzere parçacıkların kinetik enerjisine gidebilir.
         </div>
       </div>
     </div>
@@ -867,6 +902,48 @@
     c.beginPath();c.moveTo(w*.86,ay);c.lineTo(w*.86-12,ay-7);c.lineTo(w*.86-12,ay+7);c.fill();
     text(c,'enerji akısı S',w*.61,ay-10,'#8be3a8');
   }
+
+
+  // 5) PHOTON–MATTER INTERACTION EXPLORER
+  function fmtPhotonEnergy(eV){
+    if(eV >= 1e6) return (eV/1e6).toFixed(eV >= 1e7 ? 1 : 3)+' MeV';
+    if(eV >= 1e3) return (eV/1e3).toFixed(eV >= 1e4 ? 1 : 2)+' keV';
+    return eV.toFixed(eV >= 10 ? 1 : 2)+' eV';
+  }
+  function fmtPhotonLength(m){
+    if(m < 1e-12) return (m*1e15).toFixed(2)+' fm';
+    if(m < 1e-9) return (m*1e12).toFixed(2)+' pm';
+    if(m < 1e-6) return (m*1e9).toFixed(2)+' nm';
+    return (m*1e6).toFixed(2)+' µm';
+  }
+  function updatePhotonExplorer(){
+    const E=Math.pow(10,+$('photonEnergy').value);
+    const Eb=Math.pow(10,+$('bindingEnergy').value);
+    const thetaDeg=+$('comptonAngle').value;
+    const theta=thetaDeg*Math.PI/180;
+    const mec2=511000;
+    const pairThreshold=1022000;
+    const lambda=1.239841984e-6/E;
+
+    $('photonEnergyOut').textContent=fmtPhotonEnergy(E);
+    $('bindingOut').textContent=fmtPhotonEnergy(Eb);
+    $('comptonAngleOut').textContent=thetaDeg.toFixed(0)+'°';
+    $('wavelengthOut').textContent=fmtPhotonLength(lambda);
+
+    const photoPossible=E>=Eb;
+    $('photoStatus').textContent=photoPossible?'mümkün':'Eγ < Eb';
+    $('photoKRead').textContent=photoPossible?fmtPhotonEnergy(E-Eb):'—';
+
+    const Eprime=E/(1+(E/mec2)*(1-Math.cos(theta)));
+    $('comptonERead').textContent=fmtPhotonEnergy(Eprime);
+    $('comptonTransferRead').textContent=fmtPhotonEnergy(Math.max(0,E-Eprime));
+
+    const pairPossible=E>=pairThreshold;
+    $('pairStatus').textContent=pairPossible?'mümkün':'eşik altı';
+    $('pairExcessRead').textContent=pairPossible?fmtPhotonEnergy(E-pairThreshold):'—';
+  }
+  ['photonEnergy','bindingEnergy','comptonAngle'].forEach(id => $(id).addEventListener('input',updatePhotonExplorer));
+  updatePhotonExplorer();
 
   function tick(now){
     drawBalance(now);drawLand(now);drawOsc(now);drawEM(now);
