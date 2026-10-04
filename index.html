@@ -277,13 +277,16 @@
         </div>
         <div class="card">
           <h3>2B potansiyel enerji haritası</h3>
-          <p class="tiny">Haritaya tıklayarak parçacığı taşı. Ok, konservatif kuvveti gösterir: F = −∇U.</p>
+          <p class="tiny">Harita, 3B bir U(x,y,z) potansiyelinin seçilen z=z₀ kesitidir. Parçacık bu düzleme kısıtlıdır; haritaya tıklayarak taşı. Ok, düzlem içindeki konservatif kuvveti gösterir: F = −∇U.</p>
           <div class="controls">
             <label class="control">Merkez sertliği <span id="landKOut">1.0</span>
               <input id="landK" type="range" min="0.2" max="2.2" value="1" step="0.1" />
             </label>
             <label class="control">Dalgalılık <span id="landAOut">0.8</span>
               <input id="landA" type="range" min="0" max="1.8" value="0.8" step="0.1" />
+            </label>
+            <label class="control">z kesiti <span id="landZOut">0.0</span>
+              <input id="landZ" type="range" min="-3" max="3" value="0" step="0.1" />
             </label>
             <label class="control">Başlangıç hızı <span id="landVOut">1.2</span>
               <input id="landV" type="range" min="0" max="2.5" value="1.2" step="0.1" />
@@ -538,23 +541,24 @@
   const landBgCtx=landBg.getContext('2d');
   let landBgKey='';
   function pot(x,y){
-    const k=+$('landK').value,A=+$('landA').value;
-    return .5*k*(x*x+y*y)+A*(Math.sin(1.35*x)*Math.cos(1.15*y)+1);
+    const k=+$('landK').value,A=+$('landA').value,z=+$('landZ').value;
+    return .5*k*(x*x+y*y+.6*z*z)+A*(Math.sin(1.35*x)*Math.cos(1.15*y)*Math.cos(.8*z)+1);
   }
   function grad(x,y){
-    const k=+$('landK').value,A=+$('landA').value;
+    const k=+$('landK').value,A=+$('landA').value,z=+$('landZ').value,cz=Math.cos(.8*z);
     return [
-      k*x+A*1.35*Math.cos(1.35*x)*Math.cos(1.15*y),
-      k*y-A*1.15*Math.sin(1.35*x)*Math.sin(1.15*y)
+      k*x+A*1.35*Math.cos(1.35*x)*Math.cos(1.15*y)*cz,
+      k*y-A*1.15*Math.sin(1.35*x)*Math.sin(1.15*y)*cz
     ];
   }
   function resetLandVelocity(){
     const v=+$('landV').value; land.vx=0;land.vy=v;land.E0=.5*v*v+pot(land.x,land.y);
   }
   resetLandVelocity();
-  ['landK','landA','landV'].forEach(id => $(id).addEventListener('input',()=>{
+  ['landK','landA','landZ','landV'].forEach(id => $(id).addEventListener('input',()=>{
     $('landKOut').textContent=(+$('landK').value).toFixed(1);
     $('landAOut').textContent=(+$('landA').value).toFixed(1);
+    $('landZOut').textContent=(+$('landZ').value).toFixed(1);
     $('landVOut').textContent=(+$('landV').value).toFixed(1);
     resetLandVelocity();
   }));
@@ -578,7 +582,7 @@
       land.vx += .5*(ax+ax2)*dt; land.vy += .5*(ay+ay2)*dt;
       if(Math.abs(land.x)>4.2 || Math.abs(land.y)>4.2){land.x=2.1;land.y=.8;resetLandVelocity()}
     }
-    const bgKey=$('landK').value+'|'+$('landA').value;
+    const bgKey=$('landK').value+'|'+$('landA').value+'|'+$('landZ').value;
     if(bgKey!==landBgKey){
       landBgKey=bgKey;
       const img=landBgCtx.createImageData(landBg.width,landBg.height);
